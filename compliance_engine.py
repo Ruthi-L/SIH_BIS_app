@@ -25,7 +25,7 @@ Keep your tone professional, authoritative, but helpful to a manufacturer.
 
 def analyze_compliance(retrieved_chunk: Chunk, user_input: str):
     """
-    Safely fetches the API key and initializes Gemini only when a compliance check is requested.
+    Safely fetches the API key and initializes Gemini with a valid model identifier.
     """
     api_key = None
     try:
@@ -40,7 +40,7 @@ def analyze_compliance(retrieved_chunk: Chunk, user_input: str):
     if not api_key:
         return "Error: GOOGLE_API_KEY not found. Please configure your API key in Streamlit Cloud Secrets."
 
-    # Initialize the model dynamically inside the function
+    # Using standard active model identifier
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
 
     prompt = ChatPromptTemplate.from_template(compliance_system_prompt)
