@@ -47,14 +47,14 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                     analysis_result = analyze_compliance(chunk, user_prompt)
                     
                     response_text = (
-                        f"### 🎯 Compliance Analysis\n"
+                        f"###  Compliance Analysis\n"
                         f"**Based on Standard:** {chunk.standard} ({chunk.clause})\n\n"
                         f"{analysis_result}"
                     )
                 else:
                     # Fallback to original definition mode
                     response_text = (
-                        f"### 📌 Official Rule Statement\n"
+                        f"###  Official Rule Statement\n"
                         f"> **{chunk.standard} ({chunk.clause})**\n\n"
                         f"_{chunk.text}_\n\n"
                         f"**Source Reference:** `{chunk.source}`\n\n"
