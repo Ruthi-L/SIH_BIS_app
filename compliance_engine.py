@@ -1,13 +1,10 @@
 import os
+import streamlit as st
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from knowledge_base import Chunk
-# Initialize the Gemini model (using Gemini 1.5 Flash for speed)
-api_key = os.getenv("GOOGLE_API_KEY") # Or st.secrets["GOOGLE_API_KEY"] in Streamlit
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
 
-# Define the system prompt that instructs Gemini on how to act
 compliance_system_prompt = """
 You are an expert compliance officer for the Bureau of Indian Standards (BIS). 
 Your task is to analyze a user's product description against an official BIS standard.
@@ -28,17 +25,27 @@ Keep your tone professional, authoritative, but helpful to a manufacturer.
 
 def analyze_compliance(retrieved_chunk: Chunk, user_input: str):
     """
-    Sends the standard and product description to Gemini for analysis.
+    Safely fetches the API key and initializes Gemini only when a compliance check is requested.
     """
+    api_key = None
+    try:
+        if "GOOGLE_API_KEY" in st.secrets:
+            api_key = st.secrets["GOOGLE_API_KEY"]
+    except Exception:
+        pass
+        
     if not api_key:
-        return "Error: GOOGLE_API_KEY not found. Please set up your API key to enable compliance analysis."
+        api_key = os.getenv("GOOGLE_API_KEY")
+
+    if not api_key:
+        return "Error: GOOGLE_API_KEY not found. Please configure your API key in Streamlit Cloud Secrets."
+
+    # Initialize the model dynamically inside the function
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
 
     prompt = ChatPromptTemplate.from_template(compliance_system_prompt)
-    
-    # Create the chain linking the prompt and the LLM
     chain = prompt | llm | StrOutputParser()
 
-    # Execute the chain
     result = chain.invoke({
         "standard_text": retrieved_chunk.text,
         "user_input": user_input
