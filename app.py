@@ -53,8 +53,8 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                 - Structure your response cleanly:
                   1. **Official Standard Reference:** Clearly state the standard name, clause/section number, and official rule text right at the beginning before any conversation.
                   2. **Personalized Analysis:** Follow up immediately in a brief engaging tone Dont incude any greetings. Address the user's specific parameters (like moisture percentages, product types. product materials, startup goals, or queries regarding rules and regulations) directly against the rule.
-                  3. **
-                - Ensure the transition from the formal rule display to the conversational advice feels seamless, helpful, and insightful.
+                  3. **Actionable Advice:** Provide clear, actionable advice or next steps for the user, ensuring you keep it relevant to their specific query.
+                    - Ensure the transition from the formal rule display to the conversational advice feels seamless, helpful, and insightful.
                 """
                 
                 # 3. Fetch API key and generate response via direct Google GenAI SDK
