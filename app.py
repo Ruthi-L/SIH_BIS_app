@@ -1,4 +1,5 @@
 import os
+import time
 import streamlit as st
 from retriever import retrieve
 from knowledge_base import Chunk
@@ -52,12 +53,12 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                 Instructions:
                 - Structure your response cleanly:
                   1. **Official Standard Reference:** Clearly state the standard name, clause/section number, and official rule text right at the beginning before any conversation.
-                  2. **Personalized Analysis:** Follow up immediately in a brief engaging tone Dont incude any greetings. Address the user's specific parameters (like moisture percentages, product types. product materials, startup goals, or queries regarding rules and regulations) directly against the rule.
+                  2. **Personalized Analysis:** Follow up immediately in a brief engaging tone. Do not include any greetings. Address the user's specific parameters (like moisture percentages, product types, product materials, startup goals, or queries regarding rules and regulations) directly against the rule.
                   3. **Actionable Advice:** Provide clear, actionable advice or next steps for the user, ensuring you keep it relevant to their specific query.
-                    - Ensure the transition from the formal rule display to the conversational advice feels seamless, helpful, and insightful.
+                - Ensure the transition from the formal rule display to the conversational advice feels seamless, helpful, and insightful.
                 """
                 
-                # 3. Fetch API key and generate response via direct Google GenAI SDK
+                # 3. Fetch API key and generate response via direct Google GenAI SDK with retry logic
                 api_key = None
                 try:
                     if "GOOGLE_API_KEY" in st.secrets:
@@ -71,15 +72,23 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                 if not api_key:
                     response_text = "Error: GOOGLE_API_KEY not found. Please configure your API key in Streamlit Cloud Secrets."
                 else:
-                    try:
-                        client = genai.Client(api_key=api_key)
-                        response = client.models.generate_content(
-                            model="gemini-3.6-flash",
-                            contents=chat_prompt,
-                        )
-                        response_text = response.text
-                    except Exception as e:
-                        response_text = f"An error occurred while generating response: {str(e)}"
+                    response_text = None
+                    client = genai.Client(api_key=api_key)
+                    
+                    for attempt in range(3):
+                        try:
+                            response = client.models.generate_content(
+                                model="gemini-3.6-flash",
+                                contents=chat_prompt,
+                            )
+                            response_text = response.text
+                            break
+                        except Exception as e:
+                            if ("503" in str(e) or "UNAVAILABLE" in str(e)) and attempt < 2:
+                                time.sleep(1.5)
+                                continue
+                            else:
+                                response_text = f"An error occurred while generating response: {str(e)}"
             
             st.markdown(response_text)
             st.session_state.messages.append({"role": "assistant", "content": response_text})
