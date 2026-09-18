@@ -71,8 +71,8 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                 if not api_key:
                     response_text = "Error: GOOGLE_API_KEY not found. Please configure your API key in Streamlit Cloud Secrets."
                 else:
-                    # Using standard gemini-1.5-flash model mapping supported by Google GenAI SDK
-                    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+                    # Using standard gemini-2.5-flash model mapping supported by the current google-genai SDK
+                    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
                     chain = ChatPromptTemplate.from_template(chat_system_prompt) | llm | StrOutputParser()
                     response_text = chain.invoke({})
             
