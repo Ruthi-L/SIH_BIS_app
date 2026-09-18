@@ -2,13 +2,11 @@ import os
 import streamlit as st
 from retriever import retrieve
 from knowledge_base import Chunk
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+from google import genai
 
 st.set_page_config(page_title="BIS Saarthi Compliance Assistant", layout="centered")
 
-st.markdown("## 🤖 BIS Saarthi Compliance Assistant")
+st.markdown("##  BIS Compliance Assistant")
 st.markdown("Ask about standards, or paste your product description to check compliance.")
 
 if "messages" not in st.session_state:
@@ -39,7 +37,7 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                 score, chunk = results[0] # The 'Chunk' object from knowledge_base.py
                 
                 # 2. Dynamic Conversational Prompt
-                chat_system_prompt = f"""
+                chat_prompt = f"""
                 You are BIS Saarthi, an expert, warm, and highly personalized regulatory AI collaborator (similar to Gemini). 
                 You are talking directly to a manufacturer or entrepreneur.
                 
@@ -57,7 +55,7 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                 - Avoid sounding like a rigid, robotic customer service bot. Be collaborative and insightful.
                 """
                 
-                # 3. Generate response using Gemini
+                # 3. Generate response using native google-genai SDK
                 api_key = None
                 try:
                     if "GOOGLE_API_KEY" in st.secrets:
@@ -71,10 +69,24 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                 if not api_key:
                     response_text = "Error: GOOGLE_API_KEY not found. Please configure your API key in Streamlit Cloud Secrets."
                 else:
-                    # Using standard gemini-2.5-flash model mapping supported by the current google-genai SDK
-                    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
-                    chain = ChatPromptTemplate.from_template(chat_system_prompt) | llm | StrOutputParser()
-                    response_text = chain.invoke({})
+                    try:
+                        client = genai.Client(api_key=api_key)
+                        response = client.models.generate_content(
+                            model="gemini-2.5-flash",
+                            contents=chat_prompt,
+                        )
+                        response_text = response.text
+                    except Exception as e:
+                        # Fallback try with gemini-1.5-flash if 2.5 isn't globally active in their pool yet
+                        try:
+                            client = genai.Client(api_key=api_key)
+                            response = client.models.generate_content(
+                                model="gemini-1.5-flash",
+                                contents=chat_prompt,
+                            )
+                            response_text = response.text
+                        except Exception as inner_e:
+                            response_text = f"An error occurred while generating response: {str(inner_e)}"
             
             st.markdown(response_text)
             st.session_state.messages.append({"role": "assistant", "content": response_text})
