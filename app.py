@@ -6,7 +6,7 @@ from google import genai
 
 st.set_page_config(page_title="BIS Saarthi Compliance Assistant", layout="centered")
 
-st.markdown("##  BIS Compliance Assistant")
+st.markdown("## 🤖 BIS Saarthi Compliance Assistant")
 st.markdown("Ask about standards, or paste your product description to check compliance.")
 
 if "messages" not in st.session_state:
@@ -28,15 +28,15 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            # 1. Retrieve the most relevant standard
+            # 1. Retrieve the most relevant standard from your knowledge base
             results = retrieve(user_prompt, top_k=1)
             
             if not results:
                 response_text = "I couldn't find a direct standard match for that. Could you tell me a bit more about the specific product or category you're working with?"
             else:
-                score, chunk = results[0] # The 'Chunk' object from knowledge_base.py
+                score, chunk = results[0]
                 
-                # 2. Dynamic Conversational Prompt
+                # 2. Build the conversational Gemini prompt
                 chat_prompt = f"""
                 You are BIS Saarthi, an expert, warm, and highly personalized regulatory AI collaborator (similar to Gemini). 
                 You are talking directly to a manufacturer or entrepreneur.
@@ -55,7 +55,7 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                 - Avoid sounding like a rigid, robotic customer service bot. Be collaborative and insightful.
                 """
                 
-                # 3. Generate response using native google-genai SDK
+                # 3. Fetch API key and generate response via direct Google GenAI SDK
                 api_key = None
                 try:
                     if "GOOGLE_API_KEY" in st.secrets:
@@ -77,16 +77,7 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                         )
                         response_text = response.text
                     except Exception as e:
-                        # Fallback try with gemini-1.5-flash if 2.5 isn't globally active in their pool yet
-                        try:
-                            client = genai.Client(api_key=api_key)
-                            response = client.models.generate_content(
-                                model="gemini-1.5-flash",
-                                contents=chat_prompt,
-                            )
-                            response_text = response.text
-                        except Exception as inner_e:
-                            response_text = f"An error occurred while generating response: {str(inner_e)}"
+                        response_text = f"An error occurred while generating response: {str(e)}"
             
             st.markdown(response_text)
             st.session_state.messages.append({"role": "assistant", "content": response_text})
