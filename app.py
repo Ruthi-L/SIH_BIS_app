@@ -1,20 +1,13 @@
 import os
-import time
 import streamlit as st
 from retriever import retrieve
 from knowledge_base import Chunk
 from google import genai
-from google.genai import types
 
 st.set_page_config(page_title="BIS Saarthi Compliance Assistant", layout="centered")
 
-st.markdown("## BIS Compliance Assistant")
+st.markdown("## 🤖 BIS Saarthi Compliance Assistant")
 st.markdown("Ask about standards, or paste your product description to check compliance.")
-
-# Cache the GenAI client initialization for speed
-@st.cache_resource
-def get_genai_client(api_key):
-    return genai.Client(api_key=api_key)
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -35,7 +28,7 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            # 1. Retrieve the most relevant standard
+            # 1. Retrieve the most relevant standard from your knowledge base
             results = retrieve(user_prompt, top_k=1)
             
             if not results:
@@ -43,9 +36,10 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
             else:
                 score, chunk = results[0]
                 
-                # 2. Build streamlined prompt
+                # 2. Build the conversational Gemini prompt with structured rule-first requirement
                 chat_prompt = f"""
-                You are BIS Saarthi, an expert, and highly personalized regulatory AI collaborator. 
+                You are BIS Saarthi, an expert, warm, and highly personalized regulatory AI collaborator (similar to Gemini). 
+                You are talking directly to a manufacturer or entrepreneur.
                 
                 Retrieved BIS Standard Reference:
                 - Standard Name: {chunk.standard}
@@ -57,13 +51,12 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                 
                 Instructions:
                 - Structure your response cleanly:
-                  1. **Official Standard Reference:** Clearly state the standard name, clause/section number, and official rule text right at the beginning.
-                  2. **Personalized Analysis:** Follow up immediately in a brief, engaging tone without greetings. Address the user's specific parameters directly against the rule.
-                  3. **Actionable Advice:** Provide clear, concise next steps.
-                - Keep the response tight and avoid fluff to ensure fast processing.
+                  1. **Official Standard Reference:** Clearly state the standard name, clause/section number, and official rule text right at the beginning before any conversation.
+                  2. **Personalized Analysis:** Follow up immediately in a warm, conversational, and engaging tone. Address the user's specific parameters (like moisture percentages, product types, or startup goals) directly against the rule.
+                - Ensure the transition from the formal rule display to the conversational advice feels seamless, helpful, and insightful.
                 """
                 
-                # 3. Fetch API key and generate response quickly
+                # 3. Fetch API key and generate response via direct Google GenAI SDK
                 api_key = None
                 try:
                     if "GOOGLE_API_KEY" in st.secrets:
@@ -77,18 +70,11 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                 if not api_key:
                     response_text = "Error: GOOGLE_API_KEY not found. Please configure your API key in Streamlit Cloud Secrets."
                 else:
-                    response_text = None
                     try:
-                        client = get_genai_client(api_key)
-                        config = types.GenerateContentConfig(
-                            temperature=0.2,
-                            max_output_tokens=500,
-                        )
-                        
+                        client = genai.Client(api_key=api_key)
                         response = client.models.generate_content(
                             model="gemini-3.6-flash",
                             contents=chat_prompt,
-                            config=config
                         )
                         response_text = response.text
                     except Exception as e:
