@@ -36,7 +36,7 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
             else:
                 score, chunk = results[0]
                 
-                # 2. Build the conversational Gemini prompt with structured rule-first requirement
+                # 2. Build the conversational Gemini prompt
                 chat_prompt = f"""
                 You are BIS Saarthi, an expert, warm, and highly personalized regulatory AI collaborator (similar to Gemini). 
                 You are talking directly to a manufacturer or entrepreneur.
@@ -50,10 +50,11 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                 User's Query/Input: "{user_prompt}"
                 
                 Instructions:
-                - Structure your response cleanly:
-                  1. **Official Standard Reference:** Clearly state the standard name, clause/section number, and official rule text right at the beginning before any conversation.
-                  2. **Personalized Analysis:** Follow up immediately in a warm, conversational, and engaging tone. Address the user's specific parameters (like moisture percentages, product types, or startup goals) directly against the rule.
-                - Ensure the transition from the formal rule display to the conversational advice feels seamless, helpful, and insightful.
+                -**Official Standard Reference:** Clearly state the standard name, clause/section number, and official rule text right at the beginning before any conversation.
+                - Speak directly to the user (e.g., addressing their specific parameters like percentages, product types, or goals).
+                - Weave in the official BIS standard naturally to validate their idea or answer their question.
+                - If they mention specific metrics (like moisture content), evaluate them directly against the standard limits in a helpful, expert tone.
+                - Avoid sounding like a rigid, robotic customer service bot. Be collaborative and insightful.
                 """
                 
                 # 3. Fetch API key and generate response via direct Google GenAI SDK
