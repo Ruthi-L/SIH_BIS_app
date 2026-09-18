@@ -11,9 +11,8 @@ st.set_page_config(page_title="BIS Saarthi Compliance Assistant", layout="center
 st.markdown("## BIS Compliance Assistant")
 st.markdown("Ask about standards, or paste your product description to check compliance.")
 
-# Cache the GenAI client so it doesn't re-initialize on every rerun
+# Cache the GenAI client initialization for speed
 @st.cache_resource
-py_client = None
 def get_genai_client(api_key):
     return genai.Client(api_key=api_key)
 
@@ -79,12 +78,11 @@ if user_prompt := st.chat_input("Ask about a rule or paste your product descript
                     response_text = "Error: GOOGLE_API_KEY not found. Please configure your API key in Streamlit Cloud Secrets."
                 else:
                     response_text = None
-                    
                     try:
-                        client = genai.Client(api_key=api_key)
+                        client = get_genai_client(api_key)
                         config = types.GenerateContentConfig(
                             temperature=0.2,
-                            max_output_tokens=500, # Keeps generation snappy
+                            max_output_tokens=500,
                         )
                         
                         response = client.models.generate_content(
